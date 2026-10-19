@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Production Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9edf1;--card:#fff;--ink:#14202b;--mute:#5d6b78;--line:#d3dae1;--good:#1f9d63;--bad:#d64541;--acc:#1f5fbf;--warn:#e0a100}
+@media (prefers-color-scheme:dark){:root{--bg:#10161c;--card:#18212a;--ink:#e7edf2;--mute:#8d9aa7;--line:#2a3541;--good:#35c585;--bad:#ef6a66;--acc:#5b9bf5;--warn:#f2bf2e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 Barlow,system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+h1{font:700 22px 'Barlow Semi Condensed',sans-serif;margin:0 12px 0 0}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tabs{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.tabs button{border:0;background:none;color:var(--ink);padding:7px 16px;font:600 14px Barlow;cursor:pointer}
+.tabs button.on{background:var(--ink);color:var(--card)}
+input,select,#go{font:500 14px Barlow;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+input[type=number]{width:64px}
+label{color:var(--mute);font-size:13px;display:flex;gap:6px;align-items:center}
+#go{background:var(--acc);color:#fff;border-color:var(--acc);cursor:pointer;font-weight:600}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+main{padding:20px;max-width:1400px;margin:auto}
+#range{font:600 18px 'Barlow Semi Condensed';margin:0 0 14px;color:var(--mute)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.kpi small{color:var(--mute);display:block}
+.kpi b{font:700 30px 'Barlow Semi Condensed';line-height:1.1}
+.kpi.oee{border-left:5px solid var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px}
+.card h2{font:600 17px 'Barlow Semi Condensed';margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+.card.wide{grid-column:1/-1}
+.box{position:relative;height:320px}
+#msg{color:var(--bad);font-weight:500;margin-top:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Production Dashboard</h1>
+  <div class="ctl">
+    <div class="tabs" id="tabs">
+      <button data-v="day" class="on">Daily</button><button data-v="week">Weekly</button><button data-v="month">Monthly</button>
+    </div>
+    <input type="date" id="date" aria-label="Date">
+    <select id="proc" aria-label="Process"></select>
+    <label>Planned hrs/day <input type="number" id="hrs" value="8" min="1" max="24" step="0.5"></label>
+    <label>Ideal cycle (s) <input type="number" id="ct" value="30" min="1"></label>
+    <button id="go">Refresh</button>
+  </div>
+</header>
+<main>
+  <p id="range"></p>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid">
+    <div class="card wide"><h2 id="t-out">Output</h2><div class="box"><canvas id="c-out"></canvas></div></div>
+    <div class="card"><h2>Top defects (Pareto)</h2><div class="box"><canvas id="c-def"></canvas></div></div>
+    <div class="card"><h2>Downtime (Pareto, minutes)
+      <select id="dtby" aria-label="Group downtime by"><option value="reason">By reason</option><option value="category">By category</option></select></h2>
+      <div class="box"><canvas id="c-dt"></canvas></div></div>
+  </div>
+  <p id="msg"></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+/* ====== CONFIG ====== */
+const CFG = {
+  url: 'YOUR_SUPABASE_URL',          // https://xxxx.supabase.co
+  key: 'YOUR_SUPABASE_ANON_KEY',     // anon/public key (read-only RLS policies!)
+  goodValues: ['pass', 'ok', 'good'] // disposition values counted as good output (case-insensitive)
+};
+/* ==================== */
+const sb = supabase.createClient(CFG.url, CFG.key);
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const C = {good:'#1f9d63', bad:'#d64541', acc:'#1f5fbf', warn:'#e0a100'};
+let view = 'day', charts = {}, procs = [];
+
+function isoWeek(d){
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  return Math.ceil(((t - Date.UTC(t.getUTCFullYear(),0,1)) / 864e5 + 1) / 7);
+}
+function getRange(){
+  const [y,m,d] = $('date').value.split('-').map(Number);
+  if (view === 'day')  return {s:new Date(y,m-1,d), e:new Date(y,m-1,d+1)};
+  if (view === 'week'){ const off = (new Date(y,m-1,d).getDay()+6)%7; return {s:new Date(y,m-1,d-off), e:new Date(y,m-1,d-off+7)}; }
+  return {s:new Date(y,m-1,1), e:new Date(y,m,1)};
+}
+function buckets(s, e){
+  if (view === 'day') return Array.from({length:24}, (_,h) => ({k:h, l:pad(h)+':00'}));
+  const out = [], seen = new Set();
+  for (let d = new Date(s); d < e; d.setDate(d.getDate()+1)){
+    if (view === 'week') out.push({k:ymd(d), l:d.toLocaleDateString(undefined,{weekday:'short', day:'numeric'})});
+    else { const w = isoWeek(d); if (!seen.has(w)){ seen.add(w); out.push({k:w, l:'WW'+pad(w)}); } }
+  }
+  return out;
+}
+const keyOf = d => view==='day' ? d.getHours() : view==='week' ? ymd(d) : isoWeek(d);
+const isGood = r => CFG.goodValues.includes((r.disposition||'').trim().toLowerCase());
+
+async function fetchAll(table, cols, col, s, e, pid){
+  let rows = [], from = 0;
+  for(;;){
+    let q = sb.from(table).select(cols).gte(col, s.toISOString()).lt(col, e.toISOString()).order(col).order('id').range(from, from+999);
+    if (pid) q = q.eq('process_id', pid);
+    const {data, error} = await q;
+    if (error) throw error;
+    rows = rows.concat(data);
+    if (data.length < 1000) return rows;
+    from += 1000;
+  }
+}
+
+function draw(id, cfg){
+  if (charts[id]) charts[id].destroy();
+  cfg.options = Object.assign({responsive:true, maintainAspectRatio:false}, cfg.options);
+  charts[id] = new Chart($(id), cfg);
+}
+function pareto(id, map, unit){
+  const a = [...map].sort((x,y) => y[1]-x[1]).slice(0, 12);
+  const tot = a.reduce((s,x) => s+x[1], 0);
+  let run = 0;
+  const cum = a.map(x => tot ? +((run += x[1]) / tot * 100).toFixed(1) : 0);
+  draw(id, {
+    type:'bar',
+    data:{labels:a.map(x=>x[0]), datasets:[
+      {label:unit, data:a.map(x=>+x[1].toFixed(1)), backgroundColor:C.bad, yAxisID:'y', order:2},
+      {type:'line', label:'Cumulative %', data:cum, yAxisID:'y1', borderColor:C.warn, backgroundColor:C.warn, pointRadius:3, tension:0, order:1}]},
+    options:{scales:{y:{beginAtZero:true, title:{display:true,text:unit}}, y1:{position:'right', min:0, max:100, grid:{drawOnChartArea:false}, ticks:{callback:v=>v+'%'}}}}
+  });
+}
+const pct = x => (x*100).toFixed(1) + '%';
+
+async function refresh(){
+  $('msg').textContent = '';
+  try {
+    const {s, e} = getRange(), pid = $('proc').value;
+    const [logs, dts] = await Promise.all([
+      fetchAll('process_logs', 'id,scanned_at,disposition,reject_type', 'scanned_at', s, e, pid),
+      fetchAll('downtime_logs', 'id,start_time,end_time,reason,category', 'start_time', s, e, pid)
+    ]);
+    const bk = buckets(s, e), idx = new Map(bk.map((b,i) => [b.k, i]));
+    const good = bk.map(()=>0), bad = bk.map(()=>0), defects = new Map(), days = new Set();
+    for (const r of logs){
+      const d = new Date(r.scanned_at), i = idx.get(keyOf(d));
+      days.add(ymd(d));
+      if (isGood(r)) good[i]++;
+      else { bad[i]++; const k = r.reject_type || r.disposition || 'Unspecified'; defects.set(k, (defects.get(k)||0)+1); }
+    }
+    // downtime, clipped to the selected range
+    const dtMap = new Map(); let dtMin = 0;
+    const by = $('dtby').value, now = new Date();
+    for (const r of dts){
+      const a = Math.max(new Date(r.start_time), s), b = Math.min(r.end_time ? new Date(r.end_time) : now, e);
+      const m = Math.max(0, (b-a)/6e4); if (!m) continue;
+      dtMin += m;
+      const k = r[by] || 'Unspecified';
+      dtMap.set(k, (dtMap.get(k)||0) + m);
+    }
+    // OEE
+    const G = good.reduce((a,b)=>a+b,0), B = bad.reduce((a,b)=>a+b,0), T = G + B;
+    const planned = (view==='day' ? 1 : days.size) * (+$('hrs').value||8) * 60;
+    const run = Math.max(0, planned - dtMin);
+    const A = planned ? run/planned : 0;
+    const P = run ? Math.min(1, T*(+$('ct').value||30)/60/run) : 0;
+    const Q = T ? G/T : 0;
+    const k = [['Good output', G.toLocaleString()], ['Rejects', B.toLocaleString()], ['Yield', T?pct(Q):'–'],
+      ['Downtime', Math.round(dtMin)+' min'], ['Availability', pct(A)], ['Performance', pct(P)], ['Quality', T?pct(Q):'–']];
+    $('kpis').innerHTML = k.map(x => `<div class="kpi"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('') +
+      `<div class="kpi oee"><small>OEE</small><b>${pct(A*P*Q)}</b></div>`;
+    $('range').textContent = view==='day' ? s.toDateString()
+      : `${s.toDateString()} – ${new Date(e-1).toDateString()}`;
+    $('t-out').textContent = view==='day' ? 'Hourly output' : view==='week' ? 'Daily output' : 'Output per workweek';
+    draw('c-out', {type:'bar', data:{labels:bk.map(b=>b.l), datasets:[
+      {label:'Good', data:good, backgroundColor:C.good, stack:'s'},
+      {label:'Reject', data:bad, backgroundColor:C.bad, stack:'s'}]},
+      options:{scales:{x:{stacked:true}, y:{stacked:true, beginAtZero:true}}}});
+    pareto('c-def', defects, 'Rejects');
+    pareto('c-dt', dtMap, 'Minutes');
+  } catch (err){
+    $('msg').textContent = 'Could not load data: ' + (err.message || err) + '. Check the Supabase URL, key and read policies.';
+  }
+}
+
+(async function init(){
+  Chart.defaults.color = getComputedStyle(document.body).color;
+  Chart.defaults.font.family = 'Barlow, sans-serif';
+  Chart.defaults.borderColor = 'rgba(128,140,150,.25)';
+  $('date').value = ymd(new Date());
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); view = b.dataset.v; refresh();
+  });
+  ['date','proc','dtby','hrs','ct'].forEach(id => $(id).onchange = refresh);
+  $('go').onclick = refresh;
+  try {
+    const {data, error} = await sb.from('processes').select('id,name').order('id');
+    if (error) throw error;
+    $('proc').innerHTML = data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    if (data.length) $('proc').value = data[data.length-1].id; // default: last process = final output
+  } catch (err){ $('msg').textContent = 'Could not load processes: ' + (err.message || err); return; }
+  refresh();
+  setInterval(() => { if (view === 'day' && !document.hidden) refresh(); }, 60000);
+})();
+</script>
+</body>
+</html>
