@@ -93,8 +93,8 @@ main{padding:24px 28px;min-width:0}
 <script>
 /* ====== CONFIG ====== */
 const CFG = {
-  url: 'https://rcdemvceqqbkfchibtke.supabase.co',      
-  key: 'sb_publishable_ILSJLxycHrwGUvVXNFOw_Q_rOBh8-a-',     
+  url: 'https://rcdemvceqqbkfchibtke.supabase.co',          // https://xxxx.supabase.co
+  key: 'sb_publishable_ILSJLxycHrwGUvVXNFOw_Q_rOBh8-a-',     // anon/public key (read-only RLS policies!)
   goodValues: ['pass', 'ok', 'good'] // disposition values counted as good (case-insensitive)
 };
 /* ==================== */
@@ -238,7 +238,7 @@ async function jumpLatest(){
   if (CFG.url.startsWith('YOUR_') || CFG.key.startsWith('YOUR_')){
     showMsg('<b>Add your Supabase URL and publishable key</b> in the CONFIG block at the top of the script in index.html.'); $('status').textContent = 'Not configured'; return;
   }
-  sb = supabase.createClient(CFG.url, CFG.key);
+  sb = supabase.createClient(CFG.url, CFG.key, {auth:{persistSession:false, autoRefreshToken:false, detectSessionInUrl:false}});
   try {
     const {data, error} = await sb.from('processes').select('id,name').order('id');
     if (error) throw new Error('processes: ' + error.message);
