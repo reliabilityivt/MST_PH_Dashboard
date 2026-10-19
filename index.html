@@ -3,84 +3,109 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Production Dashboard</title>
+<title>Line Board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Big+Shoulders+Display:wght@600;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#e9edf1;--card:#fff;--ink:#14202b;--mute:#5d6b78;--line:#d3dae1;--good:#1f9d63;--bad:#d64541;--acc:#1f5fbf;--warn:#e0a100}
-@media (prefers-color-scheme:dark){:root{--bg:#10161c;--card:#18212a;--ink:#e7edf2;--mute:#8d9aa7;--line:#2a3541;--good:#35c585;--bad:#ef6a66;--acc:#5b9bf5;--warn:#f2bf2e}}
+:root{--ink:#0d2036;--ink2:#1a3350;--paper:#e3e7ea;--panel:#f6f7f8;--line:#c5ccd2;--mute:#5b6b7b;--good:#0f8b8d;--bad:#ff5a1f;--warn:#f2b705}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 Barlow,system-ui,sans-serif}
-header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
-h1{font:700 22px 'Barlow Semi Condensed',sans-serif;margin:0 12px 0 0}
-.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.tabs{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.tabs button{border:0;background:none;color:var(--ink);padding:7px 16px;font:600 14px Barlow;cursor:pointer}
-.tabs button.on{background:var(--ink);color:var(--card)}
-input,select,#go{font:500 14px Barlow;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
-input[type=number]{width:64px}
-label{color:var(--mute);font-size:13px;display:flex;gap:6px;align-items:center}
-#go{background:var(--acc);color:#fff;border-color:var(--acc);cursor:pointer;font-weight:600}
-:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-main{padding:20px;max-width:1400px;margin:auto}
-#range{font:600 18px 'Barlow Semi Condensed';margin:0 0 14px;color:var(--mute)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
-.kpi small{color:var(--mute);display:block}
-.kpi b{font:700 30px 'Barlow Semi Condensed';line-height:1.1}
-.kpi.oee{border-left:5px solid var(--acc)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px}
-.card h2{font:600 17px 'Barlow Semi Condensed';margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+body{margin:0;display:grid;grid-template-columns:250px 1fr;min-height:100vh;background:var(--paper);color:var(--ink);font:15px/1.4 Archivo,system-ui,sans-serif}
+aside{background:var(--ink);color:#dbe4ee;padding:22px 18px;display:flex;flex-direction:column;gap:16px;position:sticky;top:0;height:100vh}
+aside h1{font:800 34px/0.95 'Big Shoulders Display',sans-serif;margin:0;color:#fff;letter-spacing:.5px}
+aside h1 span{display:block;font:500 13px Archivo;color:#8fa4bb;letter-spacing:0;margin-top:6px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #38516d;border-radius:4px;overflow:hidden}
+.tabs button{border:0;background:none;color:#b8c7d8;padding:9px 0;font:600 14px Archivo;cursor:pointer}
+.tabs button.on{background:var(--warn);color:var(--ink)}
+aside label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:#8fa4bb}
+aside input,aside select{font:500 14px Archivo;color:#fff;background:var(--ink2);border:1px solid #38516d;border-radius:4px;padding:8px;color-scheme:dark}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+aside button.act{font:600 14px Archivo;border:1px solid #38516d;background:none;color:#dbe4ee;border-radius:4px;padding:8px;cursor:pointer}
+aside button.act:hover{background:var(--ink2)}
+#status{margin-top:auto;font-size:12.5px;color:#8fa4bb;line-height:1.5}
+#status b{color:#fff;font-weight:600}
+:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+main{padding:24px 28px;min-width:0}
+.when{font:600 15px Archivo;color:var(--mute);margin:0 0 12px}
+.hero{background:var(--panel);border:1px solid var(--line);border-radius:4px;display:grid;grid-template-columns:auto 1fr;gap:10px 40px;padding:18px 24px;align-items:center;margin-bottom:16px}
+.oee b{display:block;font:800 clamp(64px,9vw,112px)/0.85 'Big Shoulders Display';color:var(--ink)}
+.oee small{color:var(--mute);font-size:14px}
+.apq{display:grid;gap:12px}
+.m{display:grid;grid-template-columns:110px 1fr 60px;gap:12px;align-items:center}
+.m span{color:var(--mute)}
+.m i{display:block;height:14px;background:var(--line);border-radius:2px;overflow:hidden}
+.m i u{display:block;height:100%;background:var(--ink);text-decoration:none;transition:width .4s}
+.m em{font:700 22px 'Big Shoulders Display';font-style:normal;text-align:right}
+.tiles{display:flex;flex-wrap:wrap;gap:0;margin-bottom:16px;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
+.tile{flex:1 1 140px;padding:12px 16px;border-right:1px solid var(--line)}
+.tile:last-child{border:0}
+.tile small{color:var(--mute);display:block}
+.tile b{font:700 32px 'Big Shoulders Display'}
+.tile.g b{color:var(--good)}.tile.r b{color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px}
 .card.wide{grid-column:1/-1}
-.box{position:relative;height:320px}
-#msg{color:var(--bad);font-weight:500;margin-top:12px}
+.card h2{font:600 16px Archivo;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card h2 select{font:500 13px Archivo;border:1px solid var(--line);border-radius:4px;padding:4px 6px;background:#fff}
+.box{position:relative;height:300px}
+#msg{margin-top:14px;padding:12px 14px;border-left:5px solid var(--bad);background:#fff;display:none}
+@media(max-width:820px){body{grid-template-columns:1fr}aside{position:static;height:auto}.hero{grid-template-columns:1fr}#status{margin-top:0}}
 </style>
 </head>
 <body>
-<header>
-  <h1>Production Dashboard</h1>
-  <div class="ctl">
-    <div class="tabs" id="tabs">
-      <button data-v="day" class="on">Daily</button><button data-v="week">Weekly</button><button data-v="month">Monthly</button>
-    </div>
-    <input type="date" id="date" aria-label="Date">
-    <select id="proc" aria-label="Process"></select>
+<aside>
+  <h1>Line Board<span>Output, OEE and losses</span></h1>
+  <div class="tabs" id="tabs">
+    <button data-v="day" class="on">Day</button><button data-v="week">Week</button><button data-v="month">Month</button>
+  </div>
+  <label>Date <input type="date" id="date"></label>
+  <label>Process <select id="proc"></select></label>
+  <div class="row">
     <label>Planned hrs/day <input type="number" id="hrs" value="8" min="1" max="24" step="0.5"></label>
     <label>Ideal cycle (s) <input type="number" id="ct" value="30" min="1"></label>
-    <button id="go">Refresh</button>
   </div>
-</header>
+  <button class="act" id="latest">Jump to latest data</button>
+  <button class="act" id="go">Refresh</button>
+  <div id="status">Connecting…</div>
+</aside>
 <main>
-  <p id="range"></p>
-  <div class="kpis" id="kpis"></div>
+  <p class="when" id="range"></p>
+  <section class="hero">
+    <div class="oee"><b id="oee">–</b><small>Overall equipment effectiveness</small></div>
+    <div class="apq">
+      <div class="m"><span>Availability</span><i><u id="bA" style="width:0"></u></i><em id="vA">–</em></div>
+      <div class="m"><span>Performance</span><i><u id="bP" style="width:0"></u></i><em id="vP">–</em></div>
+      <div class="m"><span>Quality</span><i><u id="bQ" style="width:0"></u></i><em id="vQ">–</em></div>
+    </div>
+  </section>
+  <div class="tiles" id="tiles"></div>
   <div class="grid">
     <div class="card wide"><h2 id="t-out">Output</h2><div class="box"><canvas id="c-out"></canvas></div></div>
-    <div class="card"><h2>Top defects (Pareto)</h2><div class="box"><canvas id="c-def"></canvas></div></div>
-    <div class="card"><h2>Downtime (Pareto, minutes)
-      <select id="dtby" aria-label="Group downtime by"><option value="reason">By reason</option><option value="category">By category</option></select></h2>
+    <div class="card"><h2>Top defects</h2><div class="box"><canvas id="c-def"></canvas></div></div>
+    <div class="card"><h2>Downtime
+      <select id="dtby" aria-label="Group downtime by"><option value="reason">by reason</option><option value="category">by category</option></select></h2>
       <div class="box"><canvas id="c-dt"></canvas></div></div>
   </div>
-  <p id="msg"></p>
+  <div id="msg"></div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 /* ====== CONFIG ====== */
 const CFG = {
-  url: 'https://rcdemvceqqbkfchibtke.supabase.co',          // https://xxxx.supabase.co
-  key: 'sb_publishable_ILSJLxycHrwGUvVXNFOw_Q_rOBh8-a-',     // anon/public key (read-only RLS policies!)
-  goodValues: ['pass', 'ok', 'good'] // disposition values counted as good output (case-insensitive)
+  url: 'https://rcdemvceqqbkfchibtke.supabase.co',      
+  key: 'sb_publishable_ILSJLxycHrwGUvVXNFOw_Q_rOBh8-a-',     
+  goodValues: ['pass', 'ok', 'good'] // disposition values counted as good (case-insensitive)
 };
 /* ==================== */
-const sb = supabase.createClient(CFG.url, CFG.key);
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const C = {good:'#1f9d63', bad:'#d64541', acc:'#1f5fbf', warn:'#e0a100'};
-let view = 'day', charts = {}, procs = [];
+const pct = x => (x*100).toFixed(1) + '%';
+const C = {good:'#0f8b8d', bad:'#ff5a1f', ink:'#0d2036', warn:'#f2b705'};
+let view = 'day', charts = {}, sb;
 
+function showMsg(t){ const m = $('msg'); m.style.display = t ? 'block' : 'none'; m.innerHTML = t || ''; }
 function isoWeek(d){
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
@@ -110,13 +135,12 @@ async function fetchAll(table, cols, col, s, e, pid){
     let q = sb.from(table).select(cols).gte(col, s.toISOString()).lt(col, e.toISOString()).order(col).order('id').range(from, from+999);
     if (pid) q = q.eq('process_id', pid);
     const {data, error} = await q;
-    if (error) throw error;
+    if (error) throw new Error(table + ': ' + error.message);
     rows = rows.concat(data);
     if (data.length < 1000) return rows;
     from += 1000;
   }
 }
-
 function draw(id, cfg){
   if (charts[id]) charts[id].destroy();
   cfg.options = Object.assign({responsive:true, maintainAspectRatio:false}, cfg.options);
@@ -131,14 +155,14 @@ function pareto(id, map, unit){
     type:'bar',
     data:{labels:a.map(x=>x[0]), datasets:[
       {label:unit, data:a.map(x=>+x[1].toFixed(1)), backgroundColor:C.bad, yAxisID:'y', order:2},
-      {type:'line', label:'Cumulative %', data:cum, yAxisID:'y1', borderColor:C.warn, backgroundColor:C.warn, pointRadius:3, tension:0, order:1}]},
+      {type:'line', label:'Cumulative %', data:cum, yAxisID:'y1', borderColor:C.ink, backgroundColor:C.ink, pointRadius:3, tension:0, order:1}]},
     options:{scales:{y:{beginAtZero:true, title:{display:true,text:unit}}, y1:{position:'right', min:0, max:100, grid:{drawOnChartArea:false}, ticks:{callback:v=>v+'%'}}}}
   });
 }
-const pct = x => (x*100).toFixed(1) + '%';
+function setBar(k, v){ $('b'+k).style.width = (v*100)+'%'; $('v'+k).textContent = pct(v); }
 
 async function refresh(){
-  $('msg').textContent = '';
+  showMsg('');
   try {
     const {s, e} = getRange(), pid = $('proc').value;
     const [logs, dts] = await Promise.all([
@@ -150,10 +174,10 @@ async function refresh(){
     for (const r of logs){
       const d = new Date(r.scanned_at), i = idx.get(keyOf(d));
       days.add(ymd(d));
+      if (i === undefined) continue;
       if (isGood(r)) good[i]++;
       else { bad[i]++; const k = r.reject_type || r.disposition || 'Unspecified'; defects.set(k, (defects.get(k)||0)+1); }
     }
-    // downtime, clipped to the selected range
     const dtMap = new Map(); let dtMin = 0;
     const by = $('dtby').value, now = new Date();
     for (const r of dts){
@@ -163,35 +187,44 @@ async function refresh(){
       const k = r[by] || 'Unspecified';
       dtMap.set(k, (dtMap.get(k)||0) + m);
     }
-    // OEE
     const G = good.reduce((a,b)=>a+b,0), B = bad.reduce((a,b)=>a+b,0), T = G + B;
     const planned = (view==='day' ? 1 : days.size) * (+$('hrs').value||8) * 60;
     const run = Math.max(0, planned - dtMin);
     const A = planned ? run/planned : 0;
     const P = run ? Math.min(1, T*(+$('ct').value||30)/60/run) : 0;
     const Q = T ? G/T : 0;
-    const k = [['Good output', G.toLocaleString()], ['Rejects', B.toLocaleString()], ['Yield', T?pct(Q):'–'],
-      ['Downtime', Math.round(dtMin)+' min'], ['Availability', pct(A)], ['Performance', pct(P)], ['Quality', T?pct(Q):'–']];
-    $('kpis').innerHTML = k.map(x => `<div class="kpi"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('') +
-      `<div class="kpi oee"><small>OEE</small><b>${pct(A*P*Q)}</b></div>`;
-    $('range').textContent = view==='day' ? s.toDateString()
-      : `${s.toDateString()} – ${new Date(e-1).toDateString()}`;
-    $('t-out').textContent = view==='day' ? 'Hourly output' : view==='week' ? 'Daily output' : 'Output per workweek';
+    $('oee').textContent = T ? pct(A*P*Q) : '–';
+    setBar('A', A); setBar('P', P); setBar('Q', Q);
+    $('tiles').innerHTML =
+      `<div class="tile g"><small>Good output</small><b>${G.toLocaleString()}</b></div>` +
+      `<div class="tile r"><small>Rejects</small><b>${B.toLocaleString()}</b></div>` +
+      `<div class="tile"><small>Total scans</small><b>${T.toLocaleString()}</b></div>` +
+      `<div class="tile"><small>Downtime (min)</small><b>${Math.round(dtMin)}</b></div>`;
+    $('range').textContent = view==='day' ? s.toDateString() : `${s.toDateString()} – ${new Date(e-1).toDateString()}`;
+    $('t-out').textContent = view==='day' ? 'Output per hour' : view==='week' ? 'Output per day' : 'Output per workweek';
+    $('status').innerHTML = `<b>Connected</b><br>${logs.length.toLocaleString()} scans · ${dts.length} downtime events in range`;
     draw('c-out', {type:'bar', data:{labels:bk.map(b=>b.l), datasets:[
       {label:'Good', data:good, backgroundColor:C.good, stack:'s'},
       {label:'Reject', data:bad, backgroundColor:C.bad, stack:'s'}]},
       options:{scales:{x:{stacked:true}, y:{stacked:true, beginAtZero:true}}}});
     pareto('c-def', defects, 'Rejects');
     pareto('c-dt', dtMap, 'Minutes');
+    if (!logs.length && !dts.length)
+      showMsg('No rows in this period. Try <b>Jump to latest data</b>, or pick another process. If you expected data, see the totals in the sidebar after reloading.');
   } catch (err){
-    $('msg').textContent = 'Could not load data: ' + (err.message || err) + '. Check the Supabase URL, key and read policies.';
+    showMsg('<b>Could not load data.</b> ' + (err.message || err));
   }
 }
 
+async function jumpLatest(){
+  const {data} = await sb.from('process_logs').select('scanned_at').order('scanned_at',{ascending:false}).limit(1);
+  if (data && data.length){ $('date').value = ymd(new Date(data[0].scanned_at)); }
+}
+
 (async function init(){
-  Chart.defaults.color = getComputedStyle(document.body).color;
-  Chart.defaults.font.family = 'Barlow, sans-serif';
-  Chart.defaults.borderColor = 'rgba(128,140,150,.25)';
+  Chart.defaults.color = '#33475c';
+  Chart.defaults.font.family = 'Archivo, sans-serif';
+  Chart.defaults.borderColor = 'rgba(13,32,54,.12)';
   $('date').value = ymd(new Date());
   document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('on'));
@@ -199,12 +232,30 @@ async function refresh(){
   });
   ['date','proc','dtby','hrs','ct'].forEach(id => $(id).onchange = refresh);
   $('go').onclick = refresh;
+  $('latest').onclick = async () => { await jumpLatest(); refresh(); };
+
+  if (!window.supabase){ showMsg('<b>Supabase library failed to load.</b> Check your internet connection or ad blocker.'); return; }
+  if (CFG.url.startsWith('YOUR_') || CFG.key.startsWith('YOUR_')){
+    showMsg('<b>Add your Supabase URL and publishable key</b> in the CONFIG block at the top of the script in index.html.'); $('status').textContent = 'Not configured'; return;
+  }
+  sb = supabase.createClient(CFG.url, CFG.key);
   try {
     const {data, error} = await sb.from('processes').select('id,name').order('id');
-    if (error) throw error;
+    if (error) throw new Error('processes: ' + error.message);
+    if (!data.length){
+      showMsg('<b>The processes table returned 0 rows.</b> If the table has data, row level security is blocking the anon key. Add a select policy:<br><code>create policy "read" on processes for select to anon using (true);</code><br>Do the same for process_logs and downtime_logs.');
+      $('status').textContent = 'No access to processes'; return;
+    }
     $('proc').innerHTML = data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-    if (data.length) $('proc').value = data[data.length-1].id; // default: last process = final output
-  } catch (err){ $('msg').textContent = 'Could not load processes: ' + (err.message || err); return; }
+    $('proc').value = data[data.length-1].id;
+    const {count, error: e2} = await sb.from('process_logs').select('*', {count:'exact', head:true});
+    if (e2) throw new Error('process_logs: ' + e2.message);
+    if (!count){
+      showMsg('<b>process_logs returned 0 rows.</b> Either the table is empty or row level security is blocking the anon key. Add: <code>create policy "read" on process_logs for select to anon using (true);</code>');
+      $('status').textContent = 'No access to process_logs'; return;
+    }
+    await jumpLatest();
+  } catch (err){ showMsg('<b>Connection problem.</b> ' + (err.message || err)); $('status').textContent = 'Error'; return; }
   refresh();
   setInterval(() => { if (view === 'day' && !document.hidden) refresh(); }, 60000);
 })();
